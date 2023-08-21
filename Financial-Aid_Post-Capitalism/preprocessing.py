@@ -64,8 +64,11 @@ class DataPreprocessor:
         logging.info(f"Normalizing the features to the range {self.feature_range}.")
 
         # Separate non-numeric columns
-        non_numeric_data = data[['Country']]
-        numeric_data = data.drop(columns=['Country'])
+        non_numeric_data = data.select_dtypes(include=['object'])
+        numeric_data = data.select_dtypes(exclude=['object'])
+
+        # Replace commas and convert numeric columns to float
+        numeric_data = numeric_data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
 
         # Apply MinMaxScaler to numeric columns only
         scaler = MinMaxScaler(feature_range=self.feature_range)
@@ -73,7 +76,8 @@ class DataPreprocessor:
 
         # Combine non-numeric and scaled numeric columns
         normalized_data = pd.DataFrame(data_scaled, columns=numeric_data.columns)
-        normalized_data['Country'] = non_numeric_data['Country'].values
+        for col in non_numeric_data.columns:
+            normalized_data[col] = non_numeric_data[col].values
 
         return normalized_data
 
@@ -95,6 +99,6 @@ if __name__ == '__main__':
     raw_data = pd.read_csv(raw_data_path)
     logging.info('Raw data loaded successfully.')
     preprocessed_data = preprocessor.preprocess_data(raw_data)
-    preprocessed_data_path = f'data/output/preprocessed_world-data-2023_{datetime_str}.csv'
+    preprocessed_data_path = f'data/output/processed-data/preprocessed_world-data-2023_{preprocessor.datetime_str}.csv'
     preprocessed_data.to_csv(preprocessed_data_path, index=False)
     logging.info(f'Preprocessed data saved to {preprocessed_data_path}.')

@@ -32,11 +32,12 @@
 - **Visualization**: Pairplot of clusters.
 - **Saving**: Model as `FinancialAidGMM_model.pkl`, visualization as `clusters_visualization.png`.
 
-#### 5. **Additional Features**
+---
 
-- **Logging**: To track progress.
-- **Documentation**: Clear steps and comments.
+#### Areas of Highest Concern:
 
-#### **Conclusion**
-
-  A Gaussian Mixture Model named `FinancialAidGMM` was developed to predict areas needing financial aid for climate disaster aversion. The approach was characterized by systematic data exploration, thoughtful model selection, and careful implementation, resulting in a tailored solution for the problem at hand.
+* **Agricultural Land(%):** Countries with a high percentage of agricultural land may indicate a reliance on agriculture and potential need for industrial development.
+* **Unemployment Rate:** A high unemployment rate may signal economic distress and a need for job creation through infrastructure projects.
+* **Tax Revenue(%):** Low tax revenue may indicate a limited ability to finance public projects, including infrastructure development.
+* **Out of Pocket Health Expenditure:** High out-of-pocket health expenditure may suggest a lack of public health infrastructure.
+* **Life Expectancy, Infant Mortality, Maternal Mortality Ratio:** These health indicators can provide insights into the general well-being of the population and the need for healthcare infrastructure.
