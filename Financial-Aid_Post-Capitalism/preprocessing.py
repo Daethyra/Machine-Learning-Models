@@ -1,3 +1,11 @@
+from config import ConfigManager
+config_manager = ConfigManager()
+import os
+config_manager.check_folder_presence('images')
+config_manager.check_folder_presence('logs')
+config_manager.check_folder_presence('processed-data')
+config_manager.check_folder_presence('models')
+
 """Module for preprocessing world data, including percentage conversion, missing value handling, and normalization."""
 
 from datetime import datetime
@@ -7,22 +15,20 @@ import logging
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-"""Set datetime"""
-datetime_str = datetime.now().strftime("%d%m%Y_%H%M%S")
-
 class DataPreprocessor:
     def __init__(self, feature_range=(0, 100), missing_value_strategy='median'):
         """Initialize the DataPreprocessor class with customization options."""
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
+        self.datetime_str = datetime.now().strftime("%d%m%Y_%H%M%S")
 
     def visualize_missing_values(self, data: pd.DataFrame, stage: int):
         """Visualize missing values using a heatmap."""
         plt.figure(figsize=(10, 8))
         sns.heatmap(data.isnull(), cbar=True, cmap='viridis')
         plt.title("Missing Values Heatmap - Stage " + str(stage))
-        plt.savefig(f'data/output/missing_values_stage_{stage}_{datetime_str}.png')
+        config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
         plt.show()
 
     def convert_percentage_values(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -50,7 +56,7 @@ class DataPreprocessor:
         g.map_lower(sns.kdeplot)
         g.map_diag(sns.histplot, kde=True)
         plt.title(title)
-        plt.savefig(f'data/output/feature_distributions_stage_{stage}_{datetime_str}.png')
+        config_manager.save_plot('images', f'feature_distributions_stage_{stage}', self.datetime_str)
         plt.show()
 
     def normalize_features(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -92,5 +98,3 @@ if __name__ == '__main__':
     preprocessed_data_path = f'data/output/preprocessed_world-data-2023_{datetime_str}.csv'
     preprocessed_data.to_csv(preprocessed_data_path, index=False)
     logging.info(f'Preprocessed data saved to {preprocessed_data_path}.')
-
-preprocessed_data.to_csv(f'data/output/preprocessed_world-data-2023_{datetime_str}.csv', index=False)
