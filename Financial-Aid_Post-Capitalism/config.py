@@ -7,9 +7,9 @@ class ConfigManager:
     def __init__(self):
         pass
 
-    def configure_logger(self):
-        # Configuring the logger with a log file path containing the current timestamp
-        log_file_path = 'data/output/logs/preprocessing_log_' + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.log'
+    def configure_logger(self, module_name: str):
+        # Configuring the logger with a log file path containing the current timestamp and module name
+        log_file_path = 'data/output/logs/' + module_name + '_' + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.log'
         
         # Create a file handler that writes log messages to a file
         file_handler = logging.FileHandler(log_file_path)
@@ -41,3 +41,17 @@ class ConfigManager:
         self.check_folder_presence(folder_name)
         # Saving the plot with the specified folder name, file name, and datetime string
         plt.savefig(f'data/output/{folder_name}/{file_name}_{datetime_str}.png')
+
+    def find_latest_preprocessed_file(self):
+        "Search for the latest output of preprocessed data"
+        folder_path = 'data/output/processed-data'
+        latest_file = None
+        latest_datetime = None
+        for file_name in os.listdir(folder_path):
+            if file_name.endswith('.csv'):
+                file_datetime_str = file_name.split('_')[-2]  # Assuming the datetime is the second last element separated by '_'
+                file_datetime = datetime.strptime(file_datetime_str, "%d-%m-%Y")  # Adjusted format to match date only
+                if latest_datetime is None or file_datetime > latest_datetime:
+                    latest_datetime = file_datetime
+                    latest_file = os.path.join(folder_path, file_name)
+        return latest_file
