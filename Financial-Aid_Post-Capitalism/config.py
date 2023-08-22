@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 class ConfigManager:
     def __init__(self):
