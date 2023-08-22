@@ -21,7 +21,7 @@ class DataPreprocessor:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
-        self.datetime_str = datetime.now().strftime("%d%m%Y_%H%M%S")
+        self.datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
     def visualize_missing_values(self, data: pd.DataFrame, stage: int):
         """Visualize missing values using a heatmap."""
