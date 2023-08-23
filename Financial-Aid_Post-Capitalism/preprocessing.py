@@ -39,6 +39,12 @@ class DataPreprocessor:
                     df[col] = df[col].replace('[\\\\$,]', '', regex=True).astype(float)
                 elif '%' in str(first_non_null_value):
                     df[col] = df[col].replace('%', '', regex=True).astype(float) / 100
+                else:
+                    try:
+                        # Try to convert any other object columns containing comma-separated numbers
+                        df[col] = df[col].str.replace(',', '').astype(float)
+                    except ValueError:
+                        pass  # Skip columns that can't be converted
         return df
 
     def handle_missing_values(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -52,7 +58,6 @@ class DataPreprocessor:
 
     def normalize_features(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info(f"Normalizing the features to the range {self.feature_range}.")
-        data = data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
         scaler = MinMaxScaler(feature_range=self.feature_range)
         return pd.DataFrame(scaler.fit_transform(data), columns=data.columns)
 

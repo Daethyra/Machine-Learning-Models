@@ -15,7 +15,7 @@ class ConfigManager:
         self.check_folder_presence('processed-data')
         self.check_folder_presence('models')
 
-    def configure_logger(self): # Removed the argument 'module_name: str'
+    def configure_logger(self):
         # Automatically detecting the module name from the caller's frame
         caller_frame = inspect.stack()[1]
         module_name = inspect.getmodule(caller_frame[0]).__name__
