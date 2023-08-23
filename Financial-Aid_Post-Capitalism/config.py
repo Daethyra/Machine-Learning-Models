@@ -17,7 +17,7 @@ class ConfigManager:
         self.check_folder_presence('models')
 
     def configure_logger(self):
-        # Automatically detecting the module name from the caller's frame
+        # Automatically detects the module name from the caller's frame
         caller_frame = inspect.stack()[1]
         module_name = inspect.getmodule(caller_frame[0]).__name__
         # Configuring the logger with a log file path containing the current timestamp and module name
