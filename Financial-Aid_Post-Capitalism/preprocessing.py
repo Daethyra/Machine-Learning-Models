@@ -20,7 +20,7 @@ class DataPreprocessor:
         plt.figure(figsize=(10, 8))
         sns.heatmap(data.isnull(), cbar=True, cmap='viridis')
         plt.title("Missing Values Heatmap - Stage " + str(stage))
-        config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
+        self.config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
 
     def impute_missing_values_with_knn(self, df: pd.DataFrame) -> pd.DataFrame:
         numeric_df = df.select_dtypes(include=['number'])

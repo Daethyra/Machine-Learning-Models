@@ -1,6 +1,6 @@
-*.csv
-*.png
-*.log
+#*.csv
+#*.png
+#*.log
 logs
 staged-ideas
 ======= GitHub's Python template =======
