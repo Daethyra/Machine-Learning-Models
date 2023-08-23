@@ -84,11 +84,11 @@ class DataPreprocessor:
         return data
 
 if __name__ == '__main__':
-    raw_data_path = 'data/world-data-2023.csv'
+    raw_data_path = '/data/world-data-2023.csv'
     preprocessor = DataPreprocessor()
     raw_data = pd.read_csv(raw_data_path)
     logging.info('Raw data loaded successfully.')
     preprocessed_data = preprocessor.preprocess_data(raw_data)
-    preprocessed_data_path = f'data/output/processed-data/preprocessed_world-data-2023_{preprocessor.datetime_str}.csv'
+    preprocessed_data_path = f'/data/output/processed-data/preprocessed_world-data-2023_{preprocessor.datetime_str}.csv'
     preprocessed_data.to_csv(preprocessed_data_path, index=False)
     logging.info(f'Preprocessed data saved to {preprocessed_data_path}.')
