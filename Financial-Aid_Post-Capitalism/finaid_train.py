@@ -54,7 +54,7 @@ class FinancialAidModelTrainer:
         logging.info(f'Visualization saved as clusters_visualization_{datetime_str}.png.')
 
     def save_model(self, model):
-        model_path = f'data/output/models/{self.model_name}_model.pkl'
+        model_path = f'/data/output/models/{self.model_name}_model.pkl'
         joblib.dump(model, model_path)
         logging.info(f'Model saved as {model_path}.')
 
