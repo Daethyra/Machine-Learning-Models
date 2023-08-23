@@ -2,12 +2,23 @@ import logging
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
+import inspect
 
 class ConfigManager:
     def __init__(self):
         pass
+    
+    def setup_configuration(self):
+        self.configure_logger()
+        self.check_folder_presence('images')
+        self.check_folder_presence('logs')
+        self.check_folder_presence('processed-data')
+        self.check_folder_presence('models')
 
-    def configure_logger(self, module_name: str):
+    def configure_logger(self): # Removed the argument 'module_name: str'
+        # Automatically detecting the module name from the caller's frame
+        caller_frame = inspect.stack()[1]
+        module_name = inspect.getmodule(caller_frame[0]).__name__
         # Configuring the logger with a log file path containing the current timestamp and module name
         log_file_path = 'data/output/logs/' + module_name + '_' + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.log'
         

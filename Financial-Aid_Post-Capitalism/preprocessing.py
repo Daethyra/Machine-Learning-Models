@@ -9,14 +9,10 @@ import matplotlib.pyplot as plt
 
 # Configuration setup
 config_manager = ConfigManager()
-config_manager.configure_logger()
-config_manager.check_folder_presence('images')
-config_manager.check_folder_presence('logs')
-config_manager.check_folder_presence('processed-data')
-config_manager.check_folder_presence('models')
+config_manager.setup_configuration()
 
 class DataPreprocessor:
-    def __init__(self, feature_range=(0, 100), missing_value_strategy='median'):
+    def __init__(self, feature_range=(0, 1), missing_value_strategy='median'):  # Changed feature range
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
         self.datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -26,18 +22,16 @@ class DataPreprocessor:
         sns.heatmap(data.isnull(), cbar=True, cmap='viridis')
         plt.title("Missing Values Heatmap - Stage " + str(stage))
         config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
-        plt.show()
 
-    def impute_missing_values_with_knn(self, df):
+    def impute_missing_values_with_knn(self, df: pd.DataFrame) -> pd.DataFrame:
         numeric_df = df.select_dtypes(include=['number'])
         non_numeric_df = df.select_dtypes(exclude=['number'])
         imputer = KNNImputer(n_neighbors=5)
         imputed_numeric_data = imputer.fit_transform(numeric_df)
         imputed_numeric_df = pd.DataFrame(imputed_numeric_data, columns=numeric_df.columns, index=numeric_df.index)
-        imputed_df = pd.concat([imputed_numeric_df, non_numeric_df], axis=1)
-        return imputed_df
+        return pd.concat([imputed_numeric_df, non_numeric_df], axis=1)
 
-    def convert_currency_and_percentage_columns(self, df):
+    def convert_currency_and_percentage_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         for col in df.columns:
             if df[col].dtype == 'object':
                 first_non_null_value = df[col].dropna().iloc[0]
@@ -46,14 +40,6 @@ class DataPreprocessor:
                 elif '%' in str(first_non_null_value):
                     df[col] = df[col].replace('%', '', regex=True).astype(float) / 100
         return df
-
-    def convert_percentage_values(self, data: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Converting percentage values to numerical format.")
-        percentage_columns = ['Agricultural Land( %)', 'Tax revenue (%)', 'Unemployment rate']
-        for col in percentage_columns:
-            data[col] = data[col].str.rstrip('%').astype('float') / 100
-        data = self.convert_currency_and_percentage_columns(data)
-        return data
 
     def handle_missing_values(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info("Handling missing values.")
@@ -66,20 +52,14 @@ class DataPreprocessor:
 
     def normalize_features(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info(f"Normalizing the features to the range {self.feature_range}.")
-        non_numeric_data = data.select_dtypes(include=['object'])
-        numeric_data = data.select_dtypes(exclude=['object'])
-        numeric_data = numeric_data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
+        data = data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
         scaler = MinMaxScaler(feature_range=self.feature_range)
-        data_scaled = scaler.fit_transform(numeric_data)
-        normalized_data = pd.DataFrame(data_scaled, columns=numeric_data.columns)
-        for col in non_numeric_data.columns:
-            normalized_data[col] = non_numeric_data[col].values
-        return normalized_data
+        return pd.DataFrame(scaler.fit_transform(data), columns=data.columns)
 
     def preprocess_data(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info("Starting preprocessing steps.")
         self.visualize_missing_values(data, stage=1)
-        data = self.convert_percentage_values(data)
+        data = self.convert_currency_and_percentage_columns(data)
         data = self.handle_missing_values(data)
         data = self.impute_missing_values_with_knn(data)
         data = self.normalize_features(data)
