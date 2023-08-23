@@ -16,13 +16,13 @@ Author:
 """
 
 from config import ConfigManager
-import pandas as pd
 from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
 import joblib
+import pandas as pd
 
 # Instantiate ConfigManager
 config_manager = ConfigManager()
@@ -34,26 +34,22 @@ config_manager.configure_logger()
 data_path = config_manager.find_latest_preprocessed_file()
 try:
     if data_path:
-        data = pd.read_csv(data_path, thousands=',') # Handle thousands separator
+        data = pd.read_csv(data_path, thousands=',')  # Handle thousands separator
         logging.info('Data loaded successfully from ' + data_path)
     else:
         logging.error('No preprocessed data file found.')
 except Exception as e:
     logging.error(f"Error loading data: {e}")
 
-# Select features (excluding non-numeric columns)
-numeric_features = data.select_dtypes(include=['float64', 'int64'])
-# Handling NaN values by replacing them with the median
-from sklearn.impute import SimpleImputer
-imputer = SimpleImputer(strategy='median')
-numeric_features = imputer.fit_transform(numeric_features)
-
-features = numeric_features.drop(columns=['Country', 'Latitude', 'Longitude'], errors='ignore') # Handle non-numeric columns
+# Select key features (excluding non-numeric columns)
+selected_features = ['Density\\n(P/Km2)', 'Agricultural Land( %)', 'CPI', 'Fertility Rate',
+                     'Health Expenditure/GDP', 'Unemployment rate', 'Urban_population']
+features = data[selected_features]
+logging.info(f'Selected key features for analysis: {", ".join(selected_features)}')
 
 # Split data into training, validation, and testing sets (65% training, 15% validation, 20% testing)
 X_temp, X_test = train_test_split(features, test_size=0.20, random_state=42)
 X_train, X_val = train_test_split(X_temp, test_size=0.1875, random_state=42)
-
 logging.info('Data split into training, validation, and testing sets.')
 
 # Create and train Gaussian Mixture Model (FinancialAidGMM)
@@ -66,8 +62,8 @@ clusters = FinancialAidGMM.predict(features)
 data['Cluster'] = clusters
 logging.info('Clusters predicted.')
 
-# Visualize and save clusters
-sns.pairplot(data, hue='Cluster', vars=features.columns)
+# Visualize and save clusters for selected features
+sns.pairplot(data, hue='Cluster', vars=selected_features)
 plt.savefig('clusters_visualization.png')
 plt.show()
 logging.info('Visualization saved as clusters_visualization.png.')
