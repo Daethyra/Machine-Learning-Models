@@ -12,7 +12,7 @@ config_manager = ConfigManager()
 config_manager.setup_configuration()
 
 class DataPreprocessor:
-    def __init__(self, feature_range=(0, 1), missing_value_strategy='median'):  # Changed feature range
+    def __init__(self, feature_range=(0, 1), missing_value_strategy='median'):
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
         self.datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -58,8 +58,21 @@ class DataPreprocessor:
 
     def normalize_features(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info(f"Normalizing the features to the range {self.feature_range}.")
+        non_numeric_data = data.select_dtypes(include=['object'])
+        numeric_data = data.select_dtypes(exclude=['object'])
+        
+        # Converting any object-type numeric columns that may contain comma-separated numbers
+        numeric_data = numeric_data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
+        
         scaler = MinMaxScaler(feature_range=self.feature_range)
-        return pd.DataFrame(scaler.fit_transform(data), columns=data.columns)
+        data_scaled = scaler.fit_transform(numeric_data)
+        normalized_data = pd.DataFrame(data_scaled, columns=numeric_data.columns)
+        
+        # Concatenating non-numeric data back to the normalized DataFrame
+        for col in non_numeric_data.columns:
+            normalized_data[col] = non_numeric_data[col].values
+            
+        return normalized_data
 
     def preprocess_data(self, data: pd.DataFrame) -> pd.DataFrame:
         logging.info("Starting preprocessing steps.")
