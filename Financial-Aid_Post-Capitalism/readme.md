@@ -43,4 +43,4 @@
 * **Life Expectancy, Infant Mortality, Maternal Mortality Ratio:** These health indicators can provide insights into the general well-being of the population and the need for healthcare infrastructure.
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-##### See development documentation and output images in the [data folder](data/).
+##### See testdevelopment documentation and output images in the [data folder](data/).
