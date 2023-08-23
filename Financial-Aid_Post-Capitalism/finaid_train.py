@@ -1,74 +1,75 @@
-"""
-This module is designed to train a Gaussian Mixture Model (GMM) to identify regions that require financial aid from wealthier nations.
-The focus is on prioritizing societal overhaul through the endorsement of materials and labor. The process includes:
-
-- Loading and preprocessing data from the latest CSV file.
-- Splitting the data into training (65%), validation (15%), and testing (20%) sets.
-- Training the GMM with the specified number of components.
-- Predicting clusters and visualizing the results.
-- Saving the trained model and visualization for future use.
-
-Usage:
-    Simply run this script to train the model using the specified data path and parameters. Adjust the data path, feature selection, and model hyperparameters as needed.
-
-Author:
-    Daemon 'Daethyra' Carino
-"""
-
 from config import ConfigManager
+from datetime import datetime
 from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.impute import SimpleImputer
 import logging
 import joblib
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Instantiate ConfigManager
-config_manager = ConfigManager()
+class FinancialAidModelTrainer:
+    def __init__(self):
+        script_name = "finaid_train"
+        self.config_manager = ConfigManager(script_name)
+        self.config_manager.setup_configuration()
+        self.selected_features = ['Density\n(P/Km2)', 'Agricultural Land( %)', 'CPI', 'Fertility Rate',
+                                  'Unemployment rate', 'Urban_population']
+        self.model_name = "FinancialAidGMM"
 
-# Configure logging using ConfigManager
-config_manager.configure_logger()
+    def load_data(self):
+        data_path = self.config_manager.find_latest_preprocessed_file()
+        try:
+            if data_path:
+                data = pd.read_csv(data_path, thousands=',')  # Handle thousands separator
+                logging.info('Data loaded successfully from ' + data_path)
+                return data
+            else:
+                logging.error('No preprocessed data file found.')
+                return None
+        except Exception as e:
+            logging.error(f"Error loading data: {e}")
+            return None
 
-# Find the latest preprocessed data file and load it using ConfigManager
-data_path = config_manager.find_latest_preprocessed_file()
-try:
-    if data_path:
-        data = pd.read_csv(data_path, thousands=',')  # Handle thousands separator
-        logging.info('Data loaded successfully from ' + data_path)
-    else:
-        logging.error('No preprocessed data file found.')
-except Exception as e:
-    logging.error(f"Error loading data: {e}")
+    def preprocess_data(self, data):
+        features = data[self.selected_features]
+        imputer = SimpleImputer(strategy='median')
+        features_imputed = imputer.fit_transform(features)
+        features_imputed = pd.DataFrame(features_imputed, columns=self.selected_features)
+        return features_imputed
 
-# Select key features (excluding non-numeric columns)
-selected_features = ['Density\\n(P/Km2)', 'Agricultural Land( %)', 'CPI', 'Fertility Rate',
-                     'Health Expenditure/GDP', 'Unemployment rate', 'Urban_population']
-features = data[selected_features]
-logging.info(f'Selected key features for analysis: {", ".join(selected_features)}')
+    def train_model(self, X_train):
+        model = GaussianMixture(n_components=3)
+        model.fit(X_train)
+        logging.info('FinancialAidGMM model trained successfully.')
+        return model
 
-# Split data into training, validation, and testing sets (65% training, 15% validation, 20% testing)
-X_temp, X_test = train_test_split(features, test_size=0.20, random_state=42)
-X_train, X_val = train_test_split(X_temp, test_size=0.1875, random_state=42)
-logging.info('Data split into training, validation, and testing sets.')
+    def visualize_clusters(self, data, clusters):
+        data['Cluster'] = clusters
+        sns.pairplot(data, hue='Cluster', vars=self.selected_features)
+        plt.tight_layout()
+        datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        self.config_manager.save_plot('images', 'clusters_visualization', datetime_str)
+        logging.info(f'Visualization saved as clusters_visualization_{datetime_str}.png.')
 
-# Create and train Gaussian Mixture Model (FinancialAidGMM)
-FinancialAidGMM = GaussianMixture(n_components=3)
-FinancialAidGMM.fit(X_train)
-logging.info('FinancialAidGMM model trained successfully.')
+    def save_model(self, model):
+        model_path = f'data/output/models/{self.model_name}_model.pkl'
+        joblib.dump(model, model_path)
+        logging.info(f'Model saved as {model_path}.')
 
-# Predict clusters
-clusters = FinancialAidGMM.predict(features)
-data['Cluster'] = clusters
-logging.info('Clusters predicted.')
+    def run(self):
+        data = self.load_data()
+        if data is not None:
+            features_imputed = self.preprocess_data(data)
+            X_temp, X_test = train_test_split(features_imputed, test_size=0.20, random_state=42)
+            X_train, X_val = train_test_split(X_temp, test_size=0.1875, random_state=42)
+            logging.info('Data split into training, validation, and testing sets.')
+            model = self.train_model(X_train)
+            clusters = model.predict(features_imputed)
+            self.visualize_clusters(data, clusters)
+            self.save_model(model)
 
-# Visualize and save clusters for selected features
-sns.pairplot(data, hue='Cluster', vars=selected_features)
-plt.savefig('clusters_visualization.png')
-plt.show()
-logging.info('Visualization saved as clusters_visualization.png.')
-
-# Save model
-model_name = "FinancialAidGMM"
-joblib.dump(FinancialAidGMM, f'{model_name}_model.pkl')
-logging.info(f'Model saved as {model_name}_model.pkl.')
+if __name__ == "__main__":
+    trainer = FinancialAidModelTrainer()
+    trainer.run()

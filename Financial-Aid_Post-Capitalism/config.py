@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import inspect
 
 class ConfigManager:
-    def __init__(self):
-        pass
+    def __init__(self, module_name: str):
+        self.module_name = module_name
     
     def setup_configuration(self):
         self.configure_logger()
@@ -20,7 +20,7 @@ class ConfigManager:
         caller_frame = inspect.stack()[1]
         module_name = inspect.getmodule(caller_frame[0]).__name__
         # Configuring the logger with a log file path containing the current timestamp and module name
-        log_file_path = 'data/output/logs/' + module_name + '_' + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.log'
+        log_file_path = 'data/output/logs/' + self.module_name + '_' + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.log'
         
         # Create a file handler that writes log messages to a file
         file_handler = logging.FileHandler(log_file_path)

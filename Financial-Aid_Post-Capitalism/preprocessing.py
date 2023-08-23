@@ -7,12 +7,11 @@ import logging
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Configuration setup
-config_manager = ConfigManager()
-config_manager.setup_configuration()
-
 class DataPreprocessor:
     def __init__(self, feature_range=(0, 1), missing_value_strategy='median'):
+        script_name = "preprocessing"
+        self.config_manager = ConfigManager(script_name)
+        self.config_manager.setup_configuration()
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
         self.datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
