@@ -1,46 +1,52 @@
 from config import ConfigManager
-config_manager = ConfigManager()
-import os
-config_manager.check_folder_presence('images')
-config_manager.check_folder_presence('logs')
-config_manager.check_folder_presence('processed-data')
-config_manager.check_folder_presence('models')
-
-"""Module for preprocessing world data, including percentage conversion, missing value handling, and normalization."""
-
 from datetime import datetime
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.impute import KNNImputer
 import logging
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 class DataPreprocessor:
-    def __init__(self, feature_range=(0, 100), missing_value_strategy='median'):
-        """Initialize the DataPreprocessor class with customization options."""
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    def __init__(self, feature_range=(0, 1), missing_value_strategy='median'):
+        script_name = "preprocessing"
+        self.config_manager = ConfigManager(script_name)
+        self.config_manager.setup_configuration()
         self.feature_range = feature_range
         self.missing_value_strategy = missing_value_strategy
-        self.datetime_str = datetime.now().strftime("%d%m%Y_%H%M%S")
+        self.datetime_str = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
     def visualize_missing_values(self, data: pd.DataFrame, stage: int):
-        """Visualize missing values using a heatmap."""
         plt.figure(figsize=(10, 8))
         sns.heatmap(data.isnull(), cbar=True, cmap='viridis')
         plt.title("Missing Values Heatmap - Stage " + str(stage))
-        config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
-        plt.show()
+        self.config_manager.save_plot('images', f'missing_values_stage_{stage}', self.datetime_str)
 
-    def convert_percentage_values(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Convert percentage values to numerical format."""
-        logging.info("Converting percentage values to numerical format.")
-        percentage_columns = ['Agricultural Land( %)', 'Tax revenue (%)', 'Unemployment rate']
-        for col in percentage_columns:
-            data[col] = data[col].str.rstrip('%').astype('float') / 100
-        return data
+    def impute_missing_values_with_knn(self, df: pd.DataFrame) -> pd.DataFrame:
+        numeric_df = df.select_dtypes(include=['number'])
+        non_numeric_df = df.select_dtypes(exclude=['number'])
+        imputer = KNNImputer(n_neighbors=5)
+        imputed_numeric_data = imputer.fit_transform(numeric_df)
+        imputed_numeric_df = pd.DataFrame(imputed_numeric_data, columns=numeric_df.columns, index=numeric_df.index)
+        return pd.concat([imputed_numeric_df, non_numeric_df], axis=1)
+
+    def convert_currency_and_percentage_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                first_non_null_value = df[col].dropna().iloc[0]
+                if '$' in str(first_non_null_value):
+                    df[col] = df[col].replace('[\\\\$,]', '', regex=True).astype(float)
+                elif '%' in str(first_non_null_value):
+                    df[col] = df[col].replace('%', '', regex=True).astype(float) / 100
+                else:
+                    try:
+                        # Try to convert any other object columns containing comma-separated numbers
+                        df[col] = df[col].str.replace(',', '').astype(float)
+                    except ValueError:
+                        pass  # Skip columns that can't be converted
+        return df
 
     def handle_missing_values(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Handle missing values using the specified strategy."""
         logging.info("Handling missing values.")
         if self.missing_value_strategy == 'median':
             return data.fillna(data.median(numeric_only=True))
@@ -49,47 +55,31 @@ class DataPreprocessor:
         else:
             raise ValueError(f"Invalid missing value strategy: {self.missing_value_strategy}")
 
-    def visualize_feature_distributions(self, data: pd.DataFrame, title: str, stage: int):
-        """Visualize the distribution of features."""
-        g = sns.PairGrid(data)
-        g.map_upper(sns.scatterplot, s=15)
-        g.map_lower(sns.kdeplot)
-        g.map_diag(sns.histplot, kde=True)
-        plt.title(title)
-        config_manager.save_plot('images', f'feature_distributions_stage_{stage}', self.datetime_str)
-        plt.show()
-
     def normalize_features(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Normalize the numerical features to the specified range. Excludes non-numeric data."""
         logging.info(f"Normalizing the features to the range {self.feature_range}.")
-
-        # Separate non-numeric columns
         non_numeric_data = data.select_dtypes(include=['object'])
         numeric_data = data.select_dtypes(exclude=['object'])
-
-        # Replace commas and convert numeric columns to float
+        
+        # Converting any object-type numeric columns that may contain comma-separated numbers
         numeric_data = numeric_data.apply(lambda x: x.str.replace(',', '').astype(float) if x.dtype == 'object' else x)
-
-        # Apply MinMaxScaler to numeric columns only
+        
         scaler = MinMaxScaler(feature_range=self.feature_range)
         data_scaled = scaler.fit_transform(numeric_data)
-
-        # Combine non-numeric and scaled numeric columns
         normalized_data = pd.DataFrame(data_scaled, columns=numeric_data.columns)
+        
+        # Concatenating non-numeric data back to the normalized DataFrame
         for col in non_numeric_data.columns:
             normalized_data[col] = non_numeric_data[col].values
-
+            
         return normalized_data
 
     def preprocess_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Perform all preprocessing steps."""
         logging.info("Starting preprocessing steps.")
         self.visualize_missing_values(data, stage=1)
-        data = self.convert_percentage_values(data)
+        data = self.convert_currency_and_percentage_columns(data)
         data = self.handle_missing_values(data)
-        self.visualize_feature_distributions(data, "Before Normalization", stage=2)
+        data = self.impute_missing_values_with_knn(data)
         data = self.normalize_features(data)
-        self.visualize_feature_distributions(data, "After Normalization", stage=3)
         logging.info("Preprocessing completed successfully.")
         return data
 
