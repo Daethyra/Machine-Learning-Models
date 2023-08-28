@@ -1,3 +1,6 @@
+"This module provides a class to describe images using the CLIP model and LLaMA 2 Chat."
+from utility import Utility
+utility = Utility()
 from fastapi import File, UploadFile
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from PIL import Image
@@ -16,26 +19,19 @@ class ImageDescriber:
     """
 
     def __init__(self):
-        self.clip_model, self.clip_transform = self.load_clip_model()
-        self.llama_tokenizer, self.llama_model = self.load_llama_model()
+        self.clip_model, self.clip_transform = utility.load_clip_model()
+        self.llama_tokenizer, self.llama_model = utility.load_llama_model()
 
     # Create a static method to load the CLIP model.
     @staticmethod
     def load_clip_model() -> Tuple[torch.nn.Module, Compose]:
-        clip_model = torch.hub.load('openai/CLIP', 'ViT-B/32')
-        clip_transform = Compose([
-            Resize((224, 224), interpolation=Image.BICUBIC),
-            CenterCrop(224),
-            ToTensor(),
-            Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-        ])
+        # Load the model (pseudo-code)
         return clip_model, clip_transform
 
     # Create a static method to load the LLaMA 2 Chat model.
     @staticmethod
     def load_llama_model() -> Tuple[AutoTokenizer, AutoModelForCausalLM]:
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+        # Load the model (pseudo-code)
         return tokenizer, model
 
     # Use a multi-turnkey prompt to call LLAMA 2 Chat and generate a description.
@@ -72,3 +68,8 @@ class ImageDescriber:
         except Exception as e:
             detailed_error = utility.detailed_error_handling(e)
             return {"error": detailed_error}
+
+    def use_llama2chat(self, user_query: str) -> str:
+        llama2chat = LLaMA2Chat("meta-llama/Llama-2-7b-chat-hf")
+        user_needs = llama2chat.discern_user_needs(user_query)
+        return user_needs

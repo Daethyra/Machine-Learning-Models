@@ -1,5 +1,9 @@
 """_summary_:This module provides a set of utility functions for the backend.
 """
+import torch
+from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from PIL import Image
 class Utility:
     def __init__(self):
         self.cache = {}  # Cache storage
@@ -30,3 +34,20 @@ class Utility:
         Each condition is a function that takes a string and returns a boolean.
         """
         return all(condition(input_str) for condition in conditions)
+    
+    @staticmethod
+    def load_clip_model():
+        clip_model = torch.hub.load('openai/CLIP', 'ViT-B/32')
+        clip_transform = Compose([
+            Resize((224, 224), interpolation=Image.BICUBIC),
+            CenterCrop(224),
+            ToTensor(),
+            Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+        ])
+        return clip_model, clip_transform
+
+    @staticmethod
+    def load_llama_model():
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+        return tokenizer, model

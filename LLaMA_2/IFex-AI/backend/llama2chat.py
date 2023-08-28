@@ -1,9 +1,13 @@
+"This module contains the methods for chaining the conversation w/ LLAMA 2 Chat."
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from typing import List, Union, Dict
+from utility import Utility
+
+utility = Utility()
 
 class LLaMA2Chat:
     def __init__(self, model_name: str):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer, self.model = utility.load_llama_model()
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         self.counting_methodology = None  # To store user's counting methodology
         self.cache = {}  # To cache counting methodologies
@@ -27,21 +31,11 @@ class LLaMA2Chat:
 
     def construct_dialog(self, image_features: List[float]) -> str:
         """
-        Construct dialog by using image features.
+        Construct dialog by using image features, ensuring that image_features is a list of floats.
         """
+        if not all(isinstance(feature, float) for feature in image_features):
+            return {"error": "image_features must be a list of floats"}
+        
         feature_list = ', '.join(map(str, image_features))
         dialog = f"Please focus on {self.counting_methodology}. The image features are as follows: {feature_list}."
         return dialog
-
-    def generate_count(self, dialog: str) -> Union[str, Dict]:
-        """
-        Generate a count based on the user's needs and the image features.
-        """
-        try:
-            final_dialog = f"{self.counting_methodology} {dialog}"
-            inputs = self.tokenizer(final_dialog, return_tensors="pt")
-            outputs = self.model.generate(**inputs)
-            count_result = self.tokenizer.decode(outputs[0])
-            return count_result
-        except Exception as e:
-            return {"error": str(e)}
