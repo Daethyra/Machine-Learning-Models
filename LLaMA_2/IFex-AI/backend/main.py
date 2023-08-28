@@ -7,10 +7,8 @@ image_describer = ImageDescriber()
 llama2chat = LLaMA2Chat("meta-llama/Llama-2-7b-chat-hf")
 
 @app.post("/describe_image/")
-async def describe_image(image: UploadFile = File(...), user_query: str = ""):
-    """
-    Endpoint to receive an image and a user query, then return a description using CLIP and LLaMA 2 Chat.
-    """
+# Create an asynchronous function to receive an image and a user query, then return a description using CLIP and LLaMA 2 Chat.
+async def describe_image(image: UploadFile = File(...), user_query: str = ""): 
     try:
         # Extract image features using ImageDescriber
         image_features = image_describer.describe_image(image)
@@ -24,6 +22,9 @@ async def describe_image(image: UploadFile = File(...), user_query: str = ""):
         # Generate count based on user's needs and image features
         count_result = llama2chat.generate_count(dialog)
 
+        
+        # Use LLaMA2Chat functionality through ImageDescriber
+        llama_response = image_describer.use_llama2chat(user_query)
         # Construct the final response
         final_response = {
             "description": image_features,
@@ -31,7 +32,6 @@ async def describe_image(image: UploadFile = File(...), user_query: str = ""):
             "count_result": count_result
         }
 
-        return final_response
-
+        return final_response  # Return the final response
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e)}  # Return an error if an exception occurs
